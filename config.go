@@ -82,6 +82,12 @@ const (
 #         - "YYYY.0M.MICRO" -> 2026.01.0
 #         - "YY.0M0D.MICRO" -> 26.0123.0
 #
+#   tagpr.tagSign (Optional)
+#       Create signed tags using Git's signing configuration.
+#       When enabled, tags are created as annotated tags with signatures.
+#       Requires Git signing to be configured (GPG, SSH, or gitsign).
+#       Default is false (create lightweight tags).
+#
 [tagpr]
 `
 	defaultMajorLabels              = "major"
@@ -107,6 +113,7 @@ const (
 	envChangelogFile                = "TAGPR_CHANGELOG_FILE"
 	envCalendarVersioning           = "TAGPR_CALENDAR_VERSIONING"
 	envReleaseYAMLPath              = "TAGPR_RELEASE_YAML_PATH"
+	envTagSign                      = "TAGPR_TAG_SIGN"
 	configReleaseBranch             = "tagpr.releaseBranch"
 	configVersionFile               = "tagpr.versionFile"
 	configVPrefix                   = "tagpr.vPrefix"
@@ -123,6 +130,7 @@ const (
 	configChangelogFile             = "tagpr.changelogFile"
 	configCalendarVersioning        = "tagpr.calendarVersioning"
 	configReleaseYAMLPath           = "tagpr.releaseYAMLPath"
+	configTagSign                   = "tagpr.tagSign"
 )
 
 type config struct {
@@ -142,6 +150,7 @@ type config struct {
 	changelogFile      *string
 	calendarVersioning *string
 	releaseYamlPath    *string
+	tagSign            *bool
 
 	conf      string
 	gitconfig *gitconfig.Config
@@ -198,6 +207,10 @@ func (cfg *config) Reload() error {
 	cfg.reloadField(&cfg.calendarVersioning, configCalendarVersioning, envCalendarVersioning, "")
 
 	if err := validateCalendarVersioningFormat(cfg.CalendarVersioningFormat()); err != nil {
+		return err
+	}
+
+	if err := cfg.reloadBoolField(&cfg.tagSign, envTagSign, configTagSign); err != nil {
 		return err
 	}
 
@@ -429,4 +442,11 @@ func validateCalendarVersioningFormat(format string) error {
 
 func (cfg *config) ReleaseYAMLPath() string {
 	return stringify(cfg.releaseYamlPath)
+}
+
+func (cfg *config) TagSign() bool {
+	if cfg.tagSign == nil {
+		return false
+	}
+	return *cfg.tagSign
 }

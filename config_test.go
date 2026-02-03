@@ -233,3 +233,40 @@ func TestConfigCalendarVersioningRejectsMajorMinorFromEnv(t *testing.T) {
 		t.Error("expected error for MAJOR token in env")
 	}
 }
+
+func TestConfigTagSign(t *testing.T) {
+	tmpdir := t.TempDir()
+	confPath := filepath.Join(tmpdir, defaultConfigFile)
+	cfg := &config{
+		conf:      confPath,
+		gitconfig: &gitconfig.Config{GitPath: "git", File: confPath},
+	}
+
+	if err := cfg.Reload(); err != nil {
+		t.Error(err)
+	}
+
+	if cfg.TagSign() {
+		t.Error("TagSign should be false initially")
+	}
+}
+
+func TestConfigTagSignFromEnv(t *testing.T) {
+	tmpdir := t.TempDir()
+	confPath := filepath.Join(tmpdir, defaultConfigFile)
+
+	t.Setenv("TAGPR_TAG_SIGN", "true")
+
+	cfg := &config{
+		conf:      confPath,
+		gitconfig: &gitconfig.Config{GitPath: "git", File: confPath},
+	}
+
+	if err := cfg.Reload(); err != nil {
+		t.Error(err)
+	}
+
+	if !cfg.TagSign() {
+		t.Error("TagSign should be true from env")
+	}
+}

@@ -2,6 +2,7 @@ package tagpr
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/google/go-github/v82/github"
@@ -92,8 +93,15 @@ func (tp *tagpr) tagRelease(ctx context.Context, pr *github.PullRequest, currVer
 		return err
 	}
 
-	if _, _, err := tp.c.Git("tag", fullNextTag); err != nil {
-		return err
+	if tp.cfg.TagSign() {
+		message := fmt.Sprintf("Release %s", fullNextTag)
+		if _, _, err := tp.c.Git("tag", "-s", "-m", message, fullNextTag); err != nil {
+			return err
+		}
+	} else {
+		if _, _, err := tp.c.Git("tag", fullNextTag); err != nil {
+			return err
+		}
 	}
 	_, _, err = tp.c.Git("push", "--tags")
 	if err != nil {
